@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Echo Time Watch</title>
+  <style>
+    body {
+      margin: 0;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      background: white;
+    }
+  </style>
+</head>
+<body>
+<canvas id="watch" width="500" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById('watch');
+const ctx = canvas.getContext('2d');
+const CENTER = { x: canvas.width / 2, y: canvas.height / 2 };
+const STEP = 25; // space between numbers
+
+const CONFIG = {
+  hour:  { count: 3,  radiusStep: STEP, font: '24px Arial' },
+  minute:{ count: 7,  radiusStep: STEP, font: '20px Arial' },
+  second:{ count: 5,  radiusStep: STEP, font: '16px Arial' },
+};
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw center dot
+  ctx.beginPath();
+  ctx.arc(CENTER.x, CENTER.y, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = 'black';
+  ctx.fill();
+
+  const now = new Date();
+  const hour = now.getHours() % 12 || 12;
+  const minute = now.getMinutes();
+  const second = now.getSeconds();
+
+  drawNumberTrail(hour, CONFIG.hour, getAngle(hour * 30 + minute / 2));
+  drawNumberTrail(minute, CONFIG.minute, getAngle(minute * 6));
+  drawNumberTrail(second, CONFIG.second, getAngle(second * 6));
+}
+
+function getAngle(degrees) {
+  return (degrees - 90) * Math.PI / 180;
+}
+
+function drawNumberTrail(number, config, angle) {
+  ctx.font = config.font;
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (let i = 1; i <= config.count; i++) {
+    const dist = i * config.radiusStep + 10; // 10px padding after dot
+    const x = CENTER.x + dist * Math.cos(angle);
+    const y = CENTER.y + dist * Math.sin(angle);
+    ctx.fillText(String(number).padStart(2, '0'), x, y);
+  }
+}
+
+setInterval(draw, 1000);
+draw(); // Initial draw
+</script>
+</body>
+</html>
