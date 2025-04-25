@@ -1,12 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Echo Time Watch</title>
+  <title>Echo Watch</title>
   <style>
     body {
       margin: 0;
-      background: white;
+      background: black;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -18,41 +17,58 @@
   </style>
 </head>
 <body>
-<canvas id="watch" width="500" height="500"></canvas>
-
-<script>
+<canvas id="watch" width="500" height="500"></canvas><script>
 const canvas = document.getElementById('watch');
 const ctx = canvas.getContext('2d');
 const CENTER = { x: canvas.width / 2, y: canvas.height / 2 };
-const STEP = 25; // space between numbers
+const STEP = 25;
 
 const CONFIG = {
-  hour:  { count: 3,  radiusStep: STEP, font: '24px Arial' },
-  minute:{ count: 7,  radiusStep: STEP, font: '20px Arial' },
+  hour:  { count: 4,  radiusStep: STEP, font: '30px Arial' },
+  minute:{ count: 7,  radiusStep: STEP, font: '22px Arial' },
   second:{ count: 5,  radiusStep: STEP, font: '16px Arial' },
 };
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+const OUTER_RADIUS = CONFIG.minute.count * STEP + 40;
 
-  // Draw center dot
+function getAngle(degrees) {
+  return (degrees - 90) * Math.PI / 180;
+}
+
+function drawOuterCircle() {
+  ctx.beginPath();
+  ctx.arc(CENTER.x, CENTER.y, OUTER_RADIUS, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawMinuteMarkers() {
+  for (let i = 0; i < 60; i++) {
+    const angle = getAngle(i * 6);
+    const isMajor = i % 5 === 0;
+    const markerLength = isMajor ? 14 : 7;
+    const markerWidth = isMajor ? 2 : 1;
+
+    const outerX = CENTER.x + OUTER_RADIUS * Math.cos(angle);
+    const outerY = CENTER.y + OUTER_RADIUS * Math.sin(angle);
+    const innerX = CENTER.x + (OUTER_RADIUS - markerLength) * Math.cos(angle);
+    const innerY = CENTER.y + (OUTER_RADIUS - markerLength) * Math.sin(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(innerX, innerY);
+    ctx.lineTo(outerX, outerY);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = markerWidth;
+    ctx.stroke();
+  }
+}
+
+function drawCenterDot() {
   ctx.beginPath();
   ctx.arc(CENTER.x, CENTER.y, 6, 0, 2 * Math.PI);
   ctx.fillStyle = 'black';
   ctx.fill();
-
-  const now = new Date();
-  const hour = now.getHours() % 12 || 12;
-  const minute = now.getMinutes();
-  const second = now.getSeconds();
-
-  drawNumberTrail(hour, CONFIG.hour, getAngle(hour * 30 + minute / 2));
-  drawNumberTrail(minute, CONFIG.minute, getAngle(minute * 6));
-  drawNumberTrail(second, CONFIG.second, getAngle(second * 6));
-}
-
-function getAngle(degrees) {
-  return (degrees - 90) * Math.PI / 180;
 }
 
 function drawNumberTrail(number, config, angle) {
@@ -62,15 +78,49 @@ function drawNumberTrail(number, config, angle) {
   ctx.textBaseline = 'middle';
 
   for (let i = 1; i <= config.count; i++) {
-    const dist = i * config.radiusStep + 10; // 10px padding after dot
+    const dist = i * config.radiusStep + 10;
     const x = CENTER.x + dist * Math.cos(angle);
     const y = CENTER.y + dist * Math.sin(angle);
     ctx.fillText(String(number).padStart(2, '0'), x, y);
   }
 }
 
-setInterval(draw, 1000);
-draw(); // Initial draw
-</script>
-</body>
+function drawBrandName() {
+  ctx.font = '25px Arial';
+  ctx.fillStyle = 'black';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('sadique2k22', CENTER.x, CENTER.y - OUTER_RADIUS + 100);
+}
+
+function updateTime() {
+  const now = new Date();
+  const ms = now.getMilliseconds();
+  const sec = now.getSeconds() + ms / 1000;
+  const min = now.getMinutes() + sec / 60;
+  const hr = (now.getHours() % 12 || 12) + min / 60;
+
+  const time = {
+    hourAngle: getAngle(hr * 30),
+    minuteAngle: getAngle(min * 6),
+    secondAngle: getAngle(sec * 6),
+    hour: Math.floor(hr),
+    minute: Math.floor(min),
+    second: Math.floor(sec)
+  };
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawOuterCircle();
+  drawMinuteMarkers();
+  drawCenterDot();
+  drawBrandName();
+
+  drawNumberTrail(time.hour, CONFIG.hour, time.hourAngle);
+  drawNumberTrail(time.minute, CONFIG.minute, time.minuteAngle);
+  drawNumberTrail(time.second, CONFIG.second, time.secondAngle);
+}
+
+setInterval(updateTime, 1000 / 60);
+updateTime();
+</script></body>
 </html>
